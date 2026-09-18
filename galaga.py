@@ -2,7 +2,7 @@
 #INITAL BLOCK
 #------------------------
 
-
+import random
 import curses
 
 def main(stdscr):
@@ -20,6 +20,12 @@ def main(stdscr):
 #==================================
     bullets=[]
     enemies=[]
+    e_bullets=[]
+    '''if random.random() <0.8:
+        shooter = random.choice(enemies)
+        e_bullets.append([shooter[0], shooter[1]+1])'''
+
+    
 
     enemy_count=9
     enemy_space=4
@@ -31,8 +37,6 @@ def main(stdscr):
         offset= (i-middle_ind)*enemy_space
         enemies.append([center_x + offset,2])
 
-    '''for col in range(8):
-        enemies.append([8 + col * 4, 2])'''
 
 
 
@@ -50,13 +54,23 @@ def main(stdscr):
             b[1]-=1
         bullets = [b for b in bullets if b[1]>0]
 
+        for eb in e_bullets:
+            eb[1]+=1
+        e_bullets=[eb for eb in e_bullets if eb[1]<height-1] 
 
-        for b in bullets:
-            for e in enemies:
+
+        for b in bullets[:]:
+            for e in enemies[:]:
                 if b[0]==e[0] and b[1]==e[1]:
                     bullets.remove(b)
                     enemies.remove(e)
                     break
+
+        if enemies and random.random()<0.08:
+            shooter=random.choice(enemies)
+            e_bullets.append([shooter[0],shooter[1]+1])
+
+
 
         stdscr.erase()
         stdscr.addstr(y+y//2, x, "A")
@@ -64,9 +78,17 @@ def main(stdscr):
         for b in bullets:
             stdscr.addstr(b[1], b[0], "#")
 
+        
+
         for e in enemies:
             stdscr.addstr(e[1],e[0],"W")
+        for eb in e_bullets:
+            stdscr.addstr(eb[1],eb[0],"!")
+
         stdscr.refresh()
+
+
+
 
 curses.wrapper(main)
 
