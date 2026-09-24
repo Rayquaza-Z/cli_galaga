@@ -22,28 +22,28 @@ def main(stdscr):
         enemies = []
 
         if pattern == 0:
-            mid = enemy_count // 2
+            mid = (enemy_count - 1) / 2.0
             for i in range(enemy_count):
-                offset = (i - mid) * spacing
+                offset = int((i - mid) * spacing)
                 enemies.append([center_x + offset, 2])
 
         elif pattern == 1:
             row1 = enemy_count // 2 + enemy_count % 2
             row2 = enemy_count - row1
-            mid1 = row1 // 2
+            mid1 = (row1 - 1) / 2.0
             for i in range(row1):
-                offset = (i - mid1) * spacing
+                offset = int((i - mid1) * spacing)
                 enemies.append([center_x + offset, 2])
-            mid2 = row2 // 2
+            mid2 = (row2 - 1) / 2.0
             for i in range(row2):
-                offset = (i - mid2) * spacing
+                offset = int((i - mid2) * spacing)
                 enemies.append([center_x + offset, 4])
 
         else:
-            mid = enemy_count // 2
+            mid = (enemy_count - 1) / 2.0
             for i in range(enemy_count):
-                offset = (i - mid) * spacing
-                row = 2 + abs(i - mid)
+                offset = int((i - mid) * spacing)
+                row = 2 + int(abs(i - mid))
                 enemies.append([center_x + offset, row])
 
         return enemies
@@ -73,9 +73,9 @@ def main(stdscr):
         if game_over and key == ord('r'):
             x, y, bullets, e_bullets, enemies, lives, game_over, level, fire_chance = new_game()
         elif key == curses.KEY_LEFT:
-            x = max(0, x - 4)
+            x = max(0, x - 2)
         elif key == curses.KEY_RIGHT:
-            x = min(width - 1, x + 4)
+            x = min(width - 1, x + 2)
         elif key == ord(' '):
             bullets.append([x, y + y // 2 - 1])
 
@@ -115,10 +115,10 @@ def main(stdscr):
                 fire_chance = fire_chance_for_level(level)
 
         stdscr.erase()
-        stdscr.addstr(y + y // 2, x, "A")
+        stdscr.addstr(y + y // 2, x, "^")
 
         for b in bullets:
-            stdscr.addstr(b[1], b[0], "#")
+            stdscr.addstr(b[1], b[0], "*")
 
         for e in enemies:
             stdscr.addstr(e[1], e[0], "W")
