@@ -20,31 +20,56 @@ def main(stdscr):
         center_x = width // 2
         spacing = 4
         enemies = []
+        
+        safe_width = width - 4
+        max_in_row = max(1, safe_width // spacing)
+
+        def add_row(n, y_pos):
+            mid = (n - 1) / 2.0
+            for i in range(n):
+                offset = int((i - mid) * spacing)
+                enemies.append([center_x + offset, y_pos])
 
         if pattern == 0:
-            mid = (enemy_count - 1) / 2.0
-            for i in range(enemy_count):
-                offset = int((i - mid) * spacing)
-                enemies.append([center_x + offset, 2])
+            remaining = enemy_count
+            y = 2
+            while remaining > 0:
+                take = min(remaining, max_in_row)
+                add_row(take, y)
+                remaining -= take
+                y += 2
 
         elif pattern == 1:
             row1 = enemy_count // 2 + enemy_count % 2
             row2 = enemy_count - row1
-            mid1 = (row1 - 1) / 2.0
-            for i in range(row1):
-                offset = int((i - mid1) * spacing)
-                enemies.append([center_x + offset, 2])
-            mid2 = (row2 - 1) / 2.0
-            for i in range(row2):
-                offset = int((i - mid2) * spacing)
-                enemies.append([center_x + offset, 4])
+            
+            y = 2
+            for row_count in [row1, row2]:
+                remaining = row_count
+                while remaining > 0:
+                    take = min(remaining, max_in_row)
+                    add_row(take, y)
+                    remaining -= take
+                    y += 2
 
         else:
-            mid = (enemy_count - 1) / 2.0
-            for i in range(enemy_count):
+            remaining = enemy_count
+            take = min(remaining, max_in_row)
+            
+            mid = (take - 1) / 2.0
+            for i in range(take):
                 offset = int((i - mid) * spacing)
                 row = 2 + int(abs(i - mid))
                 enemies.append([center_x + offset, row])
+                
+            remaining -= take
+            y = 2 + int(mid) + 2
+            
+            while remaining > 0:
+                take = min(remaining, max_in_row)
+                add_row(take, y)
+                remaining -= take
+                y += 2
 
         return enemies
 
@@ -73,9 +98,11 @@ def main(stdscr):
         if game_over and key == ord('r'):
             x, y, bullets, e_bullets, enemies, lives, game_over, level, fire_chance = new_game()
         elif key == curses.KEY_LEFT:
-            x = max(0, x - 2)
+            if x - 2 >= 1:
+                x -= 2
         elif key == curses.KEY_RIGHT:
-            x = min(width - 1, x + 2)
+            if x + 2 <= width - 2:
+                x += 2
         elif key == ord(' '):
             bullets.append([x, y + y // 2 - 1])
 
@@ -115,6 +142,15 @@ def main(stdscr):
                 fire_chance = fire_chance_for_level(level)
 
         stdscr.erase()
+        
+        # Draw boundaries
+        for i in range(1, height - 1):
+            try:
+                stdscr.addstr(i, 0, '#')
+                stdscr.addstr(i, width - 1, '#')
+            except curses.error:
+                pass
+                
         stdscr.addstr(y + y // 2, x, "^")
 
         for b in bullets:
