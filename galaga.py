@@ -4,13 +4,13 @@
 
 import random
 import curses
+import time
 
 def main(stdscr):
     curses.curs_set(0)
     curses.start_color()
     curses.use_default_colors()
     stdscr.nodelay(True)
-    stdscr.timeout(50)
 
     height, width = stdscr.getmaxyx()
 
@@ -92,44 +92,72 @@ def main(stdscr):
     x, y, bullets, e_bullets, enemies, lives, game_over, level, fire_chance = new_game()
 
     while True:
-        key = stdscr.getch()
-        if key == ord('q'):
-            break
-        if game_over and key == ord('r'):
-            x, y, bullets, e_bullets, enemies, lives, game_over, level, fire_chance = new_game()
-        elif key == curses.KEY_LEFT:
-            if x - 2 >= 1:
-                x -= 2
-        elif key == curses.KEY_RIGHT:
-            if x + 2 <= width - 2:
-                x += 2
-        elif key == ord(' '):
+        space_pressed = False
+        while True:
+            key = stdscr.getch()
+            if key == -1:
+                break
+            if key == ord('q'):
+                return
+            if game_over and key == ord('r'):
+                x, y, bullets, e_bullets, enemies, lives, game_over, level, fire_chance = new_game()
+            elif key == curses.KEY_LEFT:
+                if x - 2 >= 1:
+                    x -= 2
+            elif key == curses.KEY_RIGHT:
+                if x + 2 <= width - 2:
+                    x += 2
+            elif key == ord(' '):
+                space_pressed = True
+
+        if space_pressed and not game_over:
             bullets.append([x, y + y // 2 - 1])
 
         if not game_over:
+            eb_speed = 1 + (level - 1) // 3
 
             for b in bullets:
                 b[1] -= 1
             bullets = [b for b in bullets if b[1] > 0]
 
             for eb in e_bullets:
-                eb[1] += 1
+                eb[1] += eb_speed
             e_bullets = [eb for eb in e_bullets if eb[1] < height - 1]
+
+            bullets_to_remove = []
+            eb_to_remove = []
+            
+            for b in bullets:
+                for eb in e_bullets:
+                    if b in bullets_to_remove or eb in eb_to_remove:
+                        continue
+                    if b[0] == eb[0]:
+                        if (b[1] + 1) >= (eb[1] - eb_speed) and b[1] <= eb[1]:
+                            bullets_to_remove.append(b)
+                            eb_to_remove.append(eb)
+                            
+            bullets = [b for b in bullets if b not in bullets_to_remove]
+            e_bullets = [eb for eb in e_bullets if eb not in eb_to_remove]
 
             for b in bullets[:]:
                 for e in enemies[:]:
                     if b[0] == e[0] and b[1] == e[1]:
-                        bullets.remove(b)
-                        enemies.remove(e)
+                        if b in bullets:
+                            bullets.remove(b)
+                        if e in enemies:
+                            enemies.remove(e)
                         break
 
+            py = y + y // 2
             for eb in e_bullets[:]:
-                if eb[1] == y + y // 2 and eb[0] == x:
-                    lives -= 1
-                    e_bullets.remove(eb)
-                    if lives == 0:
-                        game_over = True
-                    break
+                if eb[0] == x:
+                    if (eb[1] - eb_speed) <= py <= eb[1]:
+                        lives -= 1
+                        if eb in e_bullets:
+                            e_bullets.remove(eb)
+                        if lives <= 0:
+                            game_over = True
+                        break
 
             if enemies and random.random() < fire_chance:
                 shooter = random.choice(enemies)
@@ -168,6 +196,7 @@ def main(stdscr):
             stdscr.addstr(height // 2, width // 2 - 5, "GAME OVER")
 
         stdscr.refresh()
+        time.sleep(0.05)
 
 
 curses.wrapper(main)
